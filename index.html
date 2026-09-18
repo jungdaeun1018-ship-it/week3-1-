@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>당뇨병, 숫자로 증명하다 — 데이터 분석 발표</title>
+<meta name="description" content="Pima Indians Diabetes 데이터 768건을 분석해 당뇨병을 가르는 핵심 신호를 찾아낸 데이터 스토리.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Noto+Serif+KR:wght@600;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<div class="progress-track"><div class="progress-fill"></div></div>
+<ul class="dotnav"></ul>
+<div class="scroll-hint"><span class="line"></span>scroll</div>
+
+<main class="deck">
+
+  <!-- 00 : TITLE -->
+  <section class="slide title-slide" id="slide-00">
+    <div class="reveal kicker">DATA STORY · PIMA INDIANS DIABETES</div>
+    <h1 class="reveal headline">당뇨병,<br>숫자로 <em>증명하다</em></h1>
+    <p class="reveal lede">여성 환자 768명의 건강 기록에서 당뇨병을 가르는 신호를 찾는다.<br>추측이 아니라 상관관계와 모델로 확인한 결론.</p>
+    <div class="reveal title-meta">
+      <div><b>표본 규모</b>768명 · 8개 지표</div>
+      <div><b>데이터 출처</b>Kaggle · Pima Indians Diabetes</div>
+      <div><b>분석 방법</b>탐색적 분석 + 로지스틱 회귀 · 랜덤포레스트</div>
+    </div>
+  </section>
+
+  <!-- 01 : OVERVIEW -->
+  <section class="slide" id="slide-01">
+    <div class="slide-num"><b>01</b> / 11</div>
+    <div class="content-grid">
+      <div>
+        <div class="reveal eyebrow">The Dataset</div>
+        <h2 class="reveal headline">768명,<br>8개의 건강 지표</h2>
+        <p class="reveal lede">임신 횟수부터 혈당, 체질량지수, 가족력까지 — 8개 지표로 당뇨병 여부(Outcome)를 기록한 데이터. 결측치·중복값 없이 정제된 표본에서 출발한다.</p>
+      </div>
+      <div class="reveal panel">
+        <div class="prop-bar">
+          <div class="prop-seg no">정상 65.1%</div>
+          <div class="prop-seg yes">당뇨 34.9%</div>
+        </div>
+        <div class="prop-legend">
+          <span><span class="dot" style="background:var(--blue)"></span>정상군 · 500명</span>
+          <span><span class="dot" style="background:var(--red)"></span>당뇨군 · 268명</span>
+        </div>
+        <p class="caption">셋 중 하나꼴로 <span class="accent">당뇨 양성</span>, 결코 낮지 않은 비율</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 02 : MISSING AS ZERO -->
+  <section class="slide" id="slide-02">
+    <div class="slide-num"><b>02</b> / 11</div>
+    <div class="content-grid">
+      <div>
+        <div class="reveal eyebrow">Hidden Gaps</div>
+        <h2 class="reveal headline">0은 없는 값이 아니라<br><em>비어있는</em> 값</h2>
+        <p class="reveal lede">혈당 0, 혈압 0은 생리적으로 불가능 — 실제로는 결측치가 0으로 기록된 것. 인슐린은 절반 가까이가 비어있다. 중앙값 대체로 전처리 완료.</p>
+      </div>
+      <div class="reveal panel">
+        <div class="bar-chart bar-chart--missing">
+          <div class="bar-row">
+            <div class="bar-label">인슐린<small>Insulin</small></div>
+            <div class="bar-track"><div class="bar-fill hero" data-target="100"><span class="bar-value">374건 · 48.7%</span></div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">피부두께<small>SkinThickness</small></div>
+            <div class="bar-track"><div class="bar-fill" data-target="60.7"><span class="bar-value">227건 · 29.6%</span></div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">혈압<small>BloodPressure</small></div>
+            <div class="bar-track"><div class="bar-fill" data-target="9.4"><span class="bar-value">35건 · 4.6%</span></div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">체질량지수<small>BMI</small></div>
+            <div class="bar-track"><div class="bar-fill" data-target="2.9"><span class="bar-value">11건 · 1.4%</span></div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">혈당<small>Glucose</small></div>
+            <div class="bar-track"><div class="bar-fill" data-target="1.3"><span class="bar-value">5건 · 0.7%</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 03 : THE QUESTION / CORRELATION -->
+  <section class="slide" id="slide-03">
+    <div class="slide-num"><b>03</b> / 11</div>
+    <div class="content-grid reverse">
+      <div class="reveal panel">
+        <div class="bar-chart bar-chart--corr">
+          <div class="bar-row">
+            <div class="bar-label">혈당<small>Glucose</small></div>
+            <div class="bar-track"><div class="bar-fill hero" data-target="100"><span class="bar-value">0.49</span></div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">체질량지수<small>BMI</small></div>
+            <div class="bar-track"><div class="bar-fill" data-target="63.3"><span class="bar-value">0.31</span></div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">나이<small>Age</small></div>
+            <div class="bar-track"><div class="bar-fill" data-target="48.3"><span class="bar-value">0.24</span></div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">임신 횟수<small>Pregnancies</small></div>
+            <div class="bar-track"><div class="bar-fill" data-target="45.0"><span class="bar-value">0.22</span></div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">피부두께<small>SkinThickness</small></div>
+            <div class="bar-track"><div class="bar-fill" data-target="43.6"><span class="bar-value">0.21</span></div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">인슐린<small>Insulin</small></div>
+            <div class="bar-track"><div class="bar-fill" data-target="41.4"><span class="bar-value">0.20</span></div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">가족력 지수<small>DiabetesPedigreeFn</small></div>
+            <div class="bar-track"><div class="bar-fill" data-target="35.3"><span class="bar-value">0.17</span></div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">혈압<small>BloodPressure</small></div>
+            <div class="bar-track"><div class="bar-fill" data-target="33.7"><span class="bar-value">0.17</span></div></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="reveal eyebrow">The Question</div>
+        <h2 class="reveal headline">무엇이<br>당뇨병을 가르는가</h2>
+        <p class="reveal lede">8개 지표를 Outcome과의 상관계수로 줄 세우면 답은 하나로 모인다. 혈당, 독보적 1위. 체질량지수가 멀찍이 뒤를 잇는다.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 04 : GLUCOSE -->
+  <section class="slide" id="slide-04">
+    <div class="slide-num"><b>04</b> / 11</div>
+    <div class="reveal eyebrow">Glucose</div>
+    <h2 class="reveal headline">혈당, 가장 강력한 <em>단일 신호</em></h2>
+    <div class="reveal stat-duo">
+      <div class="stat">
+        <div class="stat-label"><span class="dot" style="background:var(--blue)"></span>정상군 평균</div>
+        <div><span class="stat-value">0</span><span class="stat-unit">mg/dL</span></div>
+      </div>
+      <div class="stat">
+        <div class="stat-label"><span class="dot" style="background:var(--red)"></span>당뇨군 평균</div>
+        <div><span class="stat-value">0</span><span class="stat-unit">mg/dL</span></div>
+      </div>
+    </div>
+    <div class="reveal delta-chip">▲ 28% 높음 · 당뇨군 평균 혈당</div>
+    <p class="reveal caption">상관계수 1위, 모델 중요도 1위 — <span class="accent">두 방법 모두 같은 결론</span></p>
+  </section>
+
+  <!-- 05 : BMI -->
+  <section class="slide" id="slide-05">
+    <div class="slide-num"><b>05</b> / 11</div>
+    <div class="reveal eyebrow">Body Mass Index</div>
+    <h2 class="reveal headline">체중, 두 번째 <em>경고 신호</em></h2>
+    <div class="reveal stat-duo">
+      <div class="stat">
+        <div class="stat-label"><span class="dot" style="background:var(--blue)"></span>정상군 평균</div>
+        <div><span class="stat-value">0</span><span class="stat-unit">kg/m²</span></div>
+      </div>
+      <div class="stat">
+        <div class="stat-label"><span class="dot" style="background:var(--red)"></span>당뇨군 평균</div>
+        <div><span class="stat-value">0</span><span class="stat-unit">kg/m²</span></div>
+      </div>
+    </div>
+    <div class="reveal delta-chip">▲ 4.5kg/m² 높음 · 당뇨군 평균 체질량지수</div>
+    <p class="reveal caption">체중 관리가 흔들리는 지점, <span class="accent">당뇨 위험이 함께 흔들린다</span></p>
+  </section>
+
+  <!-- 06 : AGE -->
+  <section class="slide" id="slide-06">
+    <div class="slide-num"><b>06</b> / 11</div>
+    <div class="reveal eyebrow">Age</div>
+    <h2 class="reveal headline">나이가 쌓일수록,<br>위험도 <em>함께</em></h2>
+    <div class="reveal stat-duo">
+      <div class="stat">
+        <div class="stat-label"><span class="dot" style="background:var(--blue)"></span>정상군 평균</div>
+        <div><span class="stat-value">0</span></div>
+      </div>
+      <div class="stat">
+        <div class="stat-label"><span class="dot" style="background:var(--red)"></span>당뇨군 평균</div>
+        <div><span class="stat-value">0</span></div>
+      </div>
+    </div>
+    <div class="reveal delta-chip">▲ 약 6세 높음 · 당뇨군 평균 연령</div>
+    <p class="reveal caption">혈당·체중만큼 크진 않지만, <span class="accent">누적되는 위험 요인</span></p>
+  </section>
+
+  <!-- 07 : MODEL -->
+  <section class="slide" id="slide-07">
+    <div class="slide-num"><b>07</b> / 11</div>
+    <div class="content-grid">
+      <div>
+        <div class="reveal eyebrow">The Model</div>
+        <h2 class="reveal headline">경향을 넘어,<br><em>예측</em>으로</h2>
+        <p class="reveal lede">상관관계는 방향을 보여줄 뿐 — 실제로 맞힐 수 있는지는 모델로 검증한다. 로지스틱 회귀와 랜덤포레스트, 두 모델을 같은 조건에서 비교.</p>
+      </div>
+      <div class="reveal panel">
+        <div class="compare-block">
+          <div class="compare-title">정확도 Accuracy</div>
+          <div class="compare-row">
+            <div class="name"><span class="dot" style="background:var(--green)"></span>로지스틱 회귀</div>
+            <div class="compare-track"><div class="compare-fill" data-target="70.8" style="background:var(--green)"></div></div>
+            <div class="compare-num">70.8%</div>
+          </div>
+          <div class="compare-row">
+            <div class="name"><span class="dot" style="background:var(--violet)"></span>랜덤포레스트</div>
+            <div class="compare-track"><div class="compare-fill" data-target="74.0" style="background:var(--violet)"></div></div>
+            <div class="compare-num">74.0%</div>
+          </div>
+        </div>
+        <div class="compare-block">
+          <div class="compare-title">AUC</div>
+          <div class="compare-row">
+            <div class="name"><span class="dot" style="background:var(--green)"></span>로지스틱 회귀</div>
+            <div class="compare-track"><div class="compare-fill" data-target="62.6" style="background:var(--green)"></div></div>
+            <div class="compare-num">0.813</div>
+          </div>
+          <div class="compare-row">
+            <div class="name"><span class="dot" style="background:var(--violet)"></span>랜덤포레스트</div>
+            <div class="compare-track"><div class="compare-fill" data-target="63.2" style="background:var(--violet)"></div></div>
+            <div class="compare-num">0.816</div>
+          </div>
+        </div>
+        <p class="caption" style="margin-top:14px;">정확도는 <span class="accent">랜덤포레스트 우세</span>, AUC는 거의 동률</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 08 : FEATURE IMPORTANCE CONFIRMATION -->
+  <section class="slide" id="slide-08">
+    <div class="slide-num"><b>08</b> / 11</div>
+    <div class="content-grid reverse">
+      <div class="reveal panel">
+        <div class="bar-chart bar-chart--importance">
+          <div class="bar-row">
+            <div class="bar-label">혈당<small>Glucose</small></div>
+            <div class="bar-track"><div class="bar-fill hero" data-target="100"><span class="bar-value">0.268</span></div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">체질량지수<small>BMI</small></div>
+            <div class="bar-track"><div class="bar-fill" data-target="59.0"><span class="bar-value">0.158</span></div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">가족력 지수<small>DiabetesPedigreeFn</small></div>
+            <div class="bar-track"><div class="bar-fill" data-target="46.3"><span class="bar-value">0.124</span></div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">나이<small>Age</small></div>
+            <div class="bar-track"><div class="bar-fill" data-target="44.8"><span class="bar-value">0.120</span></div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">인슐린<small>Insulin</small></div>
+            <div class="bar-track"><div class="bar-fill" data-target="34.3"><span class="bar-value">0.092</span></div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">혈압<small>BloodPressure</small></div>
+            <div class="bar-track"><div class="bar-fill" data-target="31.3"><span class="bar-value">0.084</span></div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">임신 횟수<small>Pregnancies</small></div>
+            <div class="bar-track"><div class="bar-fill" data-target="29.5"><span class="bar-value">0.079</span></div></div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">피부두께<small>SkinThickness</small></div>
+            <div class="bar-track"><div class="bar-fill" data-target="27.2"><span class="bar-value">0.073</span></div></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="reveal eyebrow">Confirmation</div>
+        <h2 class="reveal headline">모델도<br><em>같은 결론</em></h2>
+        <p class="reveal lede">랜덤포레스트가 스스로 학습한 변수 중요도 순위 — 상관관계 분석과 무관하게 독립적으로 계산된 값이다. 그런데도 1·2위는 동일하게 혈당과 체질량지수.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 09 : TAKEAWAY -->
+  <section class="slide" id="slide-09">
+    <div class="slide-num"><b>09</b> / 11</div>
+    <div class="reveal eyebrow">The Takeaway</div>
+    <h2 class="reveal headline">세 가지 신호,<br>하나의 <em>우선순위</em></h2>
+    <ul class="reveal takeaway-list">
+      <li>
+        <div class="idx">01</div>
+        <div>
+          <div class="t-title">혈당 — 가장 강력한 단일 지표</div>
+          <div class="t-body">상관계수·모델 중요도 모두 1위. 당뇨군 평균이 정상군 대비 28% 높음.</div>
+        </div>
+      </li>
+      <li>
+        <div class="idx">02</div>
+        <div>
+          <div class="t-title">체질량지수 — 두 번째 경고 신호</div>
+          <div class="t-body">두 방법 모두 2위. 체중 관리가 곧 위험 관리로 이어지는 지점.</div>
+        </div>
+      </li>
+      <li>
+        <div class="idx">03</div>
+        <div>
+          <div class="t-title">나이 — 누적되는 위험 요인</div>
+          <div class="t-body">단독 효과는 크지 않지만, 다른 지표와 함께 작용해 위험을 끌어올림.</div>
+        </div>
+      </li>
+    </ul>
+    <p class="reveal caption">제언 — <span class="accent">혈당·체질량지수·나이</span> 중심 선별 검사 우선순위 제안</p>
+  </section>
+
+  <!-- 10 : CLOSING -->
+  <section class="slide closing-slide" id="slide-10">
+    <div class="slide-num"><b>10</b> / 11</div>
+    <div class="reveal eyebrow">Thank You</div>
+    <h2 class="reveal headline">데이터가 가리키는 곳,<br>다음 <em>걸음</em></h2>
+    <p class="reveal lede">분석 노트북과 원본 코드는 저장소에 공개되어 있다. 전처리, 모델 학습, 시각화 전 과정을 그대로 확인할 수 있다.</p>
+    <a class="reveal repo-link" href="https://github.com/jungdaeun1018-ship-it/week3-1-" target="_blank" rel="noopener">
+      GitHub 저장소 보기 →
+    </a>
+    <div class="closing-foot">Pima Indians Diabetes Dataset (Kaggle) · Logistic Regression / Random Forest · 2026</div>
+  </section>
+
+</main>
+
+<script src="assets/script.js"></script>
+</body>
+</html>
